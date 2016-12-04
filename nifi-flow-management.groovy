@@ -1,5 +1,6 @@
 import groovy.json.JsonBuilder
 import groovyx.net.http.RESTClient
+import groovy.util.CliBuilder
 
 import static groovy.json.JsonOutput.prettyPrint
 import static groovy.json.JsonOutput.toJson
@@ -8,6 +9,8 @@ import static groovyx.net.http.ContentType.JSON
 @Grab(group='org.codehaus.groovy.modules.http-builder',
         module='http-builder',
         version='0.7.1')
+
+def cli = new CliBuilder(Usage:'nifi-flow-management.groovy <OPTIONS> <COMMAND>')
 
 def processorName = 'Save File'
 def host = 'localhost'
