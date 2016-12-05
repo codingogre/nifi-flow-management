@@ -12,15 +12,14 @@ import groovy.time.TimeCategory
 
 cli = new CliBuilder(
     usage:'nifi-flow-management.groovy <OPTIONS> <COMMAND>',
-    header: 'Testing Header',
-    footer: 'Testing Footer')
+    header: 'Options')
 cli.with {
     h(longOpt: 'help', 'Usage Information', required: false)
     p(longOpt: 'processor', args: 1, argName: 'processorId', 'Processor in a process group that will be scheduled to run', required: true)
     n(longOpt: 'host', args: 1, argName: 'hostname', 'Hostname of the NiFi manager', required: true)
     t(longOpt: 'port', args: 1, argName: 'port', 'Port of the NiFi manager', required: false)
     s(longOpt: 'start', 'Start the processor group', required: false)
-    c(longOpt: 'check', 'Check the status of a given flow', required: false)
+    //c(longOpt: 'check', 'Check the status of a given flow', required: false)
 }
 
 // Parse and check the command line parameters
