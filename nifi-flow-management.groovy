@@ -1,109 +1,112 @@
 import groovy.json.JsonBuilder
 import groovyx.net.http.RESTClient
 import groovy.util.CliBuilder
-
 import static groovy.json.JsonOutput.prettyPrint
 import static groovy.json.JsonOutput.toJson
 import static groovyx.net.http.ContentType.JSON
+import groovy.time.TimeCategory
 
 @Grab(group='org.codehaus.groovy.modules.http-builder',
-        module='http-builder',
-        version='0.7.1')
+      module='http-builder',
+      version='0.7.1')
 
-def cli = new CliBuilder(Usage:'nifi-flow-management.groovy <OPTIONS> <COMMAND>')
-
-def processorName = 'Save File'
-def host = 'localhost'
-//def host = 'agrande-nifi-1'
-def port = 9090
-def nifi = new RESTClient("http://$host:$port/nifi-api/")
-
-println 'Looking up a component to update...'
-def resp = nifi.get(
-    path: 'controller/search-results',
-    query: [q: processorName]
-)
-assert resp.status == 200
-assert resp.data.searchResultsDTO.processorResults.size() == 1
-// println prettyPrint(toJson(resp.data))
-
-def processorId = resp.data.searchResultsDTO.processorResults[0].id
-def processGroup= resp.data.searchResultsDTO.processorResults[0].groupId
-println "Found the component, id/group:  $processorId/$processGroup"
-
-println 'Preparing to update the flow state...'
-resp = nifi.get(path: 'controller/revision')
-assert resp.status == 200
-
-// stop the processor before we can update it
-println 'Stopping the processor to apply changes...'
-def builder = new JsonBuilder()
-builder {
-    revision {
-        clientId 'my awesome script'
-        version resp.data.revision.version
-    }
-    processor {
-        id "$processorId"
-        state "STOPPED"
-    }
-}
-resp = nifi.put(
-    path: "controller/process-groups/$processGroup/processors/$processorId",
-    body: builder.toPrettyString(),
-    requestContentType: JSON
-)
-assert resp.status == 200
-
-
-// create a partial JSON update doc
-// TIP: don't name variables same as json keys, simplifies your life
-builder {
-    revision {
-        clientId 'my awesome script'
-        version resp.data.revision.version
-    }
-    processor {
-        id "$processorId"
-        config {
-            properties {
-                'Directory' '/tmp/staging'
-                'Create Missing Directories' 'true'
-            }
-        }
-    }
+cli = new CliBuilder(
+    usage:'nifi-flow-management.groovy <OPTIONS> <COMMAND>',
+    header: 'Testing Header',
+    footer: 'Testing Footer')
+cli.with {
+    h(longOpt: 'help', 'Usage Information', required: false)
+    p(longOpt: 'processor', args: 1, argName: 'processorId', 'Processor in a process group that will be scheduled to run', required: true)
+    n(longOpt: 'host', args: 1, argName: 'hostname', 'Hostname of the NiFi manager', required: true)
+    t(longOpt: 'port', args: 1, argName: 'port', 'Port of the NiFi manager', required: false)
+    s(longOpt: 'start', 'Start the processor group', required: false)
+    c(longOpt: 'check', 'Check the status of a given flow', required: false)
 }
 
-println "Updating processor...\n${builder.toPrettyString()}"
+// Parse and check the command line parameters
+options = cli.parse(args)
+if (!options) System.exit(-1)
+if (options.h) cli.usage()
 
-resp = nifi.put(
-    path: "controller/process-groups/$processGroup/processors/$processorId",
-    body: builder.toPrettyString(),
-    requestContentType: JSON
-)
-assert resp.status == 200
+// Set variables to the command line options
+host = options.n
+port = 8080
+processorId = options.p
+if (options.t) port = options.t
 
-println "Updated ok."
-// println "Got this response back:"
-// print prettyPrint(toJson(resp.data))
+// If -s or --start was specified then schedule and start flow
+if (options.s) {
+    //Lookup Processor
+    println 'Making sure processor exists...'
+	nifi = new RESTClient("http://$host:$port/nifi-api/")
+	resp = nifi.get(path: "processors/$processorId")
+	assert resp.status == 200
+	processGroup = resp.data.status.groupId
+	ver = resp.data.revision.version
 
+	println 'Preparing to update the flow state...'
+	println 'Stopping the process group to apply changes...'
+	def builder = new JsonBuilder()
+	builder {
+		id "$processGroup"
+		state "STOPPED"
+	}
 
-println 'Bringing the updated processor back online...'
-builder {
-    revision {
-        clientId 'my awesome script'
-        version resp.data.revision.version
-    }
-    processor {
-        id "$processorId"
-        state "RUNNING"
-    }
+	resp = nifi.put(
+		path: "flow/process-groups/$processGroup",
+		body: builder.toPrettyString(),
+		requestContentType: JSON
+	)
+	assert resp.status == 200
+
+	  // create date to run processor
+	use(TimeCategory) {
+		runtime = (new Date() + 30.seconds).format("ss mm HH dd MM ?")
+	}
+
+	builder {
+	    revision {
+			clientId "nifi-flow-management.groovy"
+			version ver
+		}
+		component {
+			id "$processorId"
+			config {
+				schedulingPeriod "$runtime"
+				schedulingStrategy "CRON_DRIVEN"
+			}
+		}
+	}
+
+	println "Updating processor...\n${builder.toPrettyString()}"
+
+	resp = nifi.put(
+		path: "processors/$processorId",
+		body: builder.toPrettyString(),
+		requestContentType: JSON
+	)
+	assert resp.status == 200
+
+	println "Updated ok."
+	//println "Got this response back:"
+	//print prettyPrint(toJson(resp.data))
+
+	println 'Bringing the process group back online...'
+	builder {
+		id "$processGroup"
+		state "RUNNING"
+	}
+
+	resp = nifi.put(
+		path: "flow/process-groups/$processGroup",
+		body: builder.toPrettyString(),
+		requestContentType: JSON
+	)
+	assert resp.status == 200
+
+	println "Flow scheduled successfully"
+	System.exit(0)
 }
-resp = nifi.put(
-    path: "controller/process-groups/$processGroup/processors/$processorId",
-    body: builder.toPrettyString(),
-    requestContentType: JSON
-)
-assert resp.status == 200
-
-println 'Ok'
+else {
+	println "Checking the status of flow"
+}
