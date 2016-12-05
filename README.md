@@ -1,5 +1,5 @@
 # NiFi Flow Management
-Program to schedule a processor to run along with its process group
+Program to schedule a processor to run at a specified time along with its process group
 
 Required Software: Groovy http://groovy-lang.org/download.html
 
