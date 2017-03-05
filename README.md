@@ -1,10 +1,10 @@
-# NiFi Flow Management
+# NiFi Flow Scheduler
 Program to schedule a processor to run at a specified time along with its process group
 
 Required Software: Groovy http://groovy-lang.org/download.html
 
 ```
-usage: nifi-flow-management.groovy <OPTIONS> <COMMAND>
+usage: nifi-flow-scheduler.groovy <OPTIONS> <COMMAND>
 Options
  -h,--help                      Usage Information
  -n,--host <hostname>           Hostname of the NiFi manager
@@ -15,7 +15,7 @@ Options
  
  Example: This will configure a flow with a processor ID of cbccc925-0158-1000-a8f4-1cb4e1441bc0 to start immediately
  
- groovy nifi-flow-management.groovy --processor cbccc925-0158-1000-a8f4-1cb4e1441bc0 --host myhostname --start
+ groovy nifi-flow-scheduler.groovy --processor cbccc925-0158-1000-a8f4-1cb4e1441bc0 --host myhostname --start
  ```
  You can find the Process ID for a given processor by looking at its "SETTINGS" tab of a processor's configuration.
  
