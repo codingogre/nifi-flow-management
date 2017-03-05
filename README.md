@@ -19,7 +19,7 @@ Options
  ```
  You can find the Process ID for a given processor by looking at its "SETTINGS" tab of a processor's configuration.
  
- ![Example1](https://github.com/codingogre/nifi-flow-management/blob/master/images/NiFi%20Github%20Example%201.PNG)
+ ![Example1](https://github.com/codingogre/nifi-flow-scheduler/blob/master/images/NiFi%20Github%20Example%201.PNG)
  
- ![Example2](https://github.com/codingogre/nifi-flow-management/blob/master/images/NiFi%20Github%20Example%202.PNG)
+ ![Example2](https://github.com/codingogre/nifi-flow-scheduler/blob/master/images/NiFi%20Github%20Example%202.PNG)
  
