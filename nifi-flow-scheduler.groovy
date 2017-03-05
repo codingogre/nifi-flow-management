@@ -11,7 +11,7 @@ import groovy.time.TimeCategory
       version='0.7.1')
 
 cli = new CliBuilder(
-    usage:'nifi-flow-management.groovy <OPTIONS> <COMMAND>',
+    usage:'nifi-flow-scheduler.groovy <OPTIONS> <COMMAND>',
     header: 'Options')
 cli.with {
     h(longOpt: 'help', 'Usage Information', required: false)
@@ -65,7 +65,7 @@ if (options.s) {
 
 	builder {
 	    revision {
-			clientId "nifi-flow-management.groovy"
+			clientId "nifi-flow-scheduler.groovy"
 			version ver
 		}
 		component {
